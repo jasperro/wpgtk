@@ -11,13 +11,12 @@ from os.path import join, basename
 def get_file_list(path=WALL_DIR, images=True):
     """gets filenames in a given directory, optional
     parameters for image filter."""
-
-    valid = re.compile(r"^[^\.](.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.jpe$|.*\.gif$)")
+    valid = re.compile(r"^(.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.jpe$|.*\.gif$)")
     files = []
 
-    for _, _, filenames in os.walk(path):
-        files.extend(filenames)
-        break
+    for root, d_names, f_names in os.walk(path):
+        for f in f_names:
+            files.append(os.path.relpath(os.path.join(root, f), start=WALL_DIR))
 
     files.sort()
 
@@ -53,6 +52,7 @@ def get_cache_path(wallpaper, backend=None):
 
 
 def get_sample_path(wallpaper, backend=None):
+    wallpaper = basename(wallpaper)
     """gets a wallpaper colorscheme sample's path"""
     if not backend:
         backend = settings.get("backend", "wal")
@@ -69,7 +69,7 @@ def add_template(cfile, bfile=None):
     cfile = os.path.realpath(cfile)
 
     if bfile:
-        template_name = basename(bfile)
+        template_name = bfile.split("/").pop()
     else:
         clean_atoms = [atom.lstrip(".") for atom in cfile.split("/")[-3::]]
         template_name = "_".join(clean_atoms) + ".base"
@@ -80,7 +80,7 @@ def add_template(cfile, bfile=None):
 
         shutil.copy2(src_file, join(OPT_DIR, template_name))
         os.symlink(cfile, join(OPT_DIR,
-                               template_name.replace(".base", "")))
+                   template_name.replace(".base", "")))
 
         logging.info("created backup %s.bak" % cfile)
         logging.info("added %s @ %s" % (template_name, cfile))
